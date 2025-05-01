@@ -11,69 +11,71 @@
       padding: 20px;
       background-color: #f8f9fa;
     }
-    h1 {
+    h1, h2 {
       text-align: center;
+      color: #e67e22; /* オレンジ色 */
     }
     form {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-width: 400px;
+      max-width: 500px;
       margin: 0 auto;
       background: white;
-      padding: 15px;
+      padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     label {
-      display: flex;
-      flex-direction: column;
       font-size: 16px;
+      color: #333;
     }
     input, button {
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
       border-radius: 5px;
       border: 1px solid #ccc;
+      width: 100%;
+      box-sizing: border-box;
     }
     button {
-      background-color: #28a745;
+      background-color: #e67e22; /* オレンジ色 */
       color: white;
       border: none;
       cursor: pointer;
     }
     button:hover {
-      background-color: #218838;
+      background-color: #d35400; /* 濃いオレンジ色 */
     }
     .table-container, .chart-container {
       margin-top: 30px;
       overflow-x: auto;
+      max-width: 100%;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
+      font-size: 14px;
     }
     th, td {
       border: 1px solid #000;
       padding: 8px;
       text-align: center;
-      font-size: 14px;
     }
     th {
-      background-color: #28a745;
+      background-color: #e67e22; /* オレンジ色 */
       color: white;
     }
     .delete-btn {
-      background-color: #dc3545;
+      background-color: #c0392b; /* 赤色 */
       color: white;
       border: none;
       padding: 5px 10px;
-      font-size: 14px;
       cursor: pointer;
     }
     .delete-btn:hover {
-      background-color: #c82333;
+      background-color: #e74c3c; /* 明るい赤 */
     }
     footer {
       margin-top: 50px;
@@ -84,16 +86,27 @@
     footer hr {
       margin: 30px 0;
     }
-    .form-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
     .navigate-buttons {
       display: flex;
       justify-content: center;
-      gap: 20px;
-      margin-top: 20px;
+      gap: 10px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .navigate-buttons button {
+      flex: 1 1 120px;
+      padding: 12px;
+      font-size: 16px;
+    }
+
+    @media screen and (max-width: 600px) {
+      form, .navigate-buttons {
+        width: 100%;
+        padding: 10px;
+      }
+      h1, h2 {
+        font-size: 20px;
+      }
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -102,20 +115,14 @@
   <h1>瞑想時間記録</h1>
   <form id="meditation-form">
     <p>現在時刻が自動入力されています．</p>
-    <div class="form-row">
-      <label for="meditation-date">日付:</label>
-      <input type="date" id="meditation-date" required />
-    </div>
+    <label for="meditation-date">日付:</label>
+    <input type="date" id="meditation-date" required />
 
-    <div class="form-row">
-      <label for="meditation-time-minutes">瞑想時間（分）:</label>
-      <input type="number" id="meditation-time-minutes" required min="0" placeholder="分" />
-    </div>
+    <label for="meditation-time-minutes">瞑想時間（分）:</label>
+    <input type="number" id="meditation-time-minutes" required min="0" placeholder="分" />
 
-    <div class="form-row">
-      <label for="meditation-time-seconds">瞑想時間（秒）:</label>
-      <input type="number" id="meditation-time-seconds" required min="0" max="59" placeholder="秒" />
-    </div>
+    <label for="meditation-time-seconds">瞑想時間（秒）:</label>
+    <input type="number" id="meditation-time-seconds" required min="0" max="59" placeholder="秒" />
 
     <button type="submit">記録</button>
   </form>
@@ -150,155 +157,149 @@
   </footer>
 
   <script>
-  function getTodayString() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
-  let meditationData = JSON.parse(localStorage.getItem('meditationData')) || {};
-  let currentStartDate = getCurrentStartDate();
-
-  document.getElementById('meditation-date').value = getTodayString();
-
-  function getCurrentStartDate() {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // 月曜日開始
-    today.setDate(diff);
-    return today;
-  }
-
-  function formatDate(date) {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
-  function getWeekData(startDate) {
-    const weekData = {};
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      const formattedDate = formatDate(date);
-      weekData[formattedDate] = meditationData[formattedDate] || null;
+    function getTodayString() {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
     }
-    return weekData;
-  }
 
-  function updateTable() {
-    const logTable = document.getElementById('meditation-log');
-    const weekData = getWeekData(currentStartDate);
-    logTable.innerHTML = '';
-    for (const date in weekData) {
-      if (weekData[date]) {
-        logTable.innerHTML += `<tr>
-          <td>${date}</td>
-          <td>${weekData[date]}</td>
-          <td><button class="delete-btn" onclick="deleteRecord('${date}')">削除</button></td>
-        </tr>`;
-      }
+    function getCurrentStartDate() {
+      const today = new Date();
+      const day = today.getDay();
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+      today.setDate(diff);
+      return today.toISOString().split('T')[0];
     }
-    updateChart(weekData);
-  }
 
-  function updateChart(weekData) {
-    const dates = Object.keys(weekData);
-    const times = Object.values(weekData).map(t => {
-      if (t) {
-        const [minutes, seconds] = t.split(':').map(num => parseInt(num));
-        return minutes + seconds / 60;
+    const meditationData = JSON.parse(localStorage.getItem('meditationData')) || {};
+    let currentStartDate = getCurrentStartDate();
+
+    document.getElementById('meditation-date').value = getTodayString();
+
+    function getWeekData(startDate) {
+      const start = new Date(startDate);
+      const weekData = {};
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        const formattedDate = date.toISOString().split('T')[0];
+        weekData[formattedDate] = meditationData[formattedDate] || null;
       }
-      return null;
-    });
+      return weekData;
+    }
 
-    const ctx = document.getElementById('meditationChart').getContext('2d');
-    if (window.myChart) window.myChart.destroy();
+    function updateTable() {
+      const logTable = document.getElementById('meditation-log');
+      const weekData = getWeekData(currentStartDate);
+      logTable.innerHTML = '';
+      for (const date in weekData) {
+        if (weekData[date]) {
+          logTable.innerHTML += `
+            <tr>
+              <td>${date}</td>
+              <td>${weekData[date]}</td>
+              <td><button class="delete-btn" onclick="deleteRecord('${date}')">削除</button></td>
+            </tr>
+          `;
+        }
+      }
+      updateChart(weekData);
+    }
 
-    window.myChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: dates,
-        datasets: [{
-          label: '瞑想時間（分）',
-          data: times,
-          borderColor: '#28a745',
-          backgroundColor: '#28a74533',
-          fill: true,
-          tension: 0.1
-        }]
-      },
-      options: {
-        interaction: {
-          mode: 'index',
-          intersect: false
+    function updateChart(weekData) {
+      const dates = Object.keys(weekData);
+      const times = Object.values(weekData).map(t => {
+        if (t) {
+          const [minutes, seconds] = t.split(':').map(num => parseInt(num));
+          return minutes + seconds / 60;
+        }
+        return null;
+      });
+
+      const ctx = document.getElementById('meditationChart').getContext('2d');
+      if (window.myChart) window.myChart.destroy();
+
+      window.myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: '瞑想時間（分）',
+            data: times,
+            borderColor: '#e67e22', /* オレンジ色 */
+            backgroundColor: '#e67e2233',
+            fill: true,
+            tension: 0.1
+          }]
         },
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const rawMinutes = context.raw;
-                const minutes = Math.floor(rawMinutes);
-                const seconds = Math.round((rawMinutes - minutes) * 60);
-                const label = `${minutes}分${seconds.toString().padStart(2, '0')}秒`;
-                return `瞑想時間: ${label}`;
+        options: {
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const rawMinutes = context.raw;
+                  const minutes = Math.floor(rawMinutes);
+                  const seconds = Math.round((rawMinutes - minutes) * 60);
+                  return `瞑想時間: ${minutes}分${seconds.toString().padStart(2, '0')}秒`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: '時間（分）'
               }
             }
           }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: '時間（分）'
-            }
-          }
         }
-      }
-    });
-  }
+      });
+    }
 
-  function deleteRecord(date) {
-    if (confirm(`${date} の記録を削除しますか？`)) {
-      delete meditationData[date];
+    function deleteRecord(date) {
+      if (confirm(`${date} の記録を削除しますか？`)) {
+        delete meditationData[date];
+        localStorage.setItem('meditationData', JSON.stringify(meditationData));
+        updateTable();
+      }
+    }
+
+    document.getElementById('meditation-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const date = document.getElementById('meditation-date').value;
+      const minutes = document.getElementById('meditation-time-minutes').value;
+      const seconds = document.getElementById('meditation-time-seconds').value.padStart(2, '0');
+
+      if (meditationData[date]) {
+        const confirmOverwrite = confirm("この日の記録はすでに存在します。上書きしますか？");
+        if (!confirmOverwrite) return;
+      }
+
+      meditationData[date] = `${parseInt(minutes)}:${seconds}`;
       localStorage.setItem('meditationData', JSON.stringify(meditationData));
       updateTable();
-    }
-  }
+    });
 
-  document.getElementById('meditation-form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const date = document.getElementById('meditation-date').value;
-    const minutes = document.getElementById('meditation-time-minutes').value;
-    const seconds = document.getElementById('meditation-time-seconds').value;
+    document.getElementById('prevWeekBtn').addEventListener('click', () => {
+      const start = new Date(currentStartDate);
+      start.setDate(start.getDate() - 7);
+      currentStartDate = start.toISOString().split('T')[0];
+      updateTable();
+    });
 
-    if (meditationData[date]) {
-      const confirmOverwrite = confirm("この日の記録はすでに存在します。上書きしますか？");
-      if (!confirmOverwrite) return;
-    }
+    document.getElementById('nextWeekBtn').addEventListener('click', () => {
+      const start = new Date(currentStartDate);
+      start.setDate(start.getDate() + 7);
+      currentStartDate = start.toISOString().split('T')[0];
+      updateTable();
+    });
 
-    const time = `${parseInt(minutes)}:${seconds.toString().padStart(2, '0')}`;
-    meditationData[date] = time;
-    localStorage.setItem('meditationData', JSON.stringify(meditationData));
     updateTable();
-  });
-
-  document.getElementById('prevWeekBtn').addEventListener('click', () => {
-    currentStartDate.setDate(currentStartDate.getDate() - 7);
-    updateTable();
-  });
-
-  document.getElementById('nextWeekBtn').addEventListener('click', () => {
-    currentStartDate.setDate(currentStartDate.getDate() + 7);
-    updateTable();
-  });
-
-  updateTable();
-</script>
-
+  </script>
 </body>
 </html>
